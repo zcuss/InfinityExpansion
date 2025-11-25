@@ -30,13 +30,14 @@ jobs:
           mv "$JAR_FILE" "target/$NEW_NAME"
           echo "RENAMED_JAR=target/$NEW_NAME" >> $GITHUB_ENV
 
-      - name: Generate changelog from last commit
+      - name: Generate changelog
         run: |
-          echo "## Changelog" > changelog.md
-          git log -1 --pretty=format:"- %s" >> changelog.md
-          echo "CHANGELOG<<EOF" >> $GITHUB_ENV
-          cat changelog.md >> $GITHUB_ENV
-          echo "EOF" >> $GITHUB_ENV
+          {
+            echo "CHANGELOG<<EOF"
+            echo "## Changelog"
+            git log -1 --pretty=format:"- %s"
+            echo "EOF"
+          } >> $GITHUB_ENV
 
       - name: Create Release
         uses: softprops/action-gh-release@v2
