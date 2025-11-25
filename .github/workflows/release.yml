@@ -32,12 +32,8 @@ jobs:
 
       - name: Generate changelog
         run: |
-          {
-            echo "CHANGELOG<<EOF"
-            echo "## Changelog"
-            git log -1 --pretty=format:"- %s"
-            echo "EOF"
-          } >> $GITHUB_ENV
+          CHANGELOG="## Changelog\n- $(git log -1 --pretty=format:%s)"
+          printf "%s\n" "CHANGELOG=$CHANGELOG" >> $GITHUB_ENV
 
       - name: Create Release
         uses: softprops/action-gh-release@v2
