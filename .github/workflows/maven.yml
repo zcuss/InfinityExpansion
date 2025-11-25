@@ -36,16 +36,16 @@ jobs:
       - name: Rename JAR
         run: |
           JAR_FILE=$(ls target/*.jar | head -n 1)
-          NEW_NAME="InfinityExpansion-latest.jar"
+          NEW_NAME="InfinityExpansion-${{ github.run_number }}.jar"
           mv "$JAR_FILE" "target/$NEW_NAME"
           echo "RENAMED_JAR=target/$NEW_NAME" >> $GITHUB_ENV
 
-      - name: Generate changelog
+      - name: Generate changelog safely
         run: |
-          echo "## Changelog" > changelog.md
-          git log -1 --pretty=format:"- %s" >> changelog.md
+          CHANGELOG=$(git log -1 --pretty=format:'- %s')
           echo "CHANGELOG<<EOF" >> $GITHUB_ENV
-          cat changelog.md >> $GITHUB_ENV
+          echo "## Changelog" >> $GITHUB_ENV
+          echo "$CHANGELOG" >> $GITHUB_ENV
           echo "EOF" >> $GITHUB_ENV
 
       - name: Upload CI Artifact (JAR)
@@ -55,11 +55,11 @@ jobs:
           path: ${{ env.RENAMED_JAR }}
           compression-level: 0
 
-      - name: Create/Update Release & Upload JAR
+      - name: Create/Update Release "latest" & Upload JAR
         uses: softprops/action-gh-release@v2
         with:
           tag_name: latest
-          name: "Auto Release"
+          name: "Auto Release latest"
           body: ${{ env.CHANGELOG }}
           files: ${{ env.RENAMED_JAR }}
           overwrite_files: true
