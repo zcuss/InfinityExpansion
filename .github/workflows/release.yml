@@ -44,3 +44,4 @@ jobs:
           files: ${{ env.RENAMED_JAR }}
         env:
           GITHUB_TOKEN: ${{ secrets.RELEASE_TOKEN }}
+# 1
