@@ -95,8 +95,8 @@ jobs:
 
       - name: Generate changelog
         run: |
-          CHANGELOG="## Changelog\n- $(git log -1 --pretty=format:%s)"
-          echo "CHANGELOG=$CHANGELOG" >> $GITHUB_ENV
+          CHANGELOG=$(git log -1 --pretty=format:"- %s")
+          echo "CHANGELOG=## Changelog\n$CHANGELOG" >> $GITHUB_ENV
 
       - name: Upload CI Artifact (JAR)
         uses: actions/upload-artifact@v4
@@ -104,13 +104,6 @@ jobs:
           name: InfinityExpansion-Build
           path: ${{ env.RENAMED_JAR }}
           compression-level: 0
-
-      - name: Create Git tag
-        run: |
-          git config user.name "GitHub Actions"
-          git config user.email "actions@github.com"
-          git tag release-${{ github.run_number }}
-          git push origin release-${{ github.run_number }}
 
       - name: Create Release & Upload JAR
         uses: softprops/action-gh-release@v2
