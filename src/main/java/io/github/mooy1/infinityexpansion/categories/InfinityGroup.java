@@ -39,7 +39,6 @@ import io.github.thebusybiscuit.slimefun4.libraries.dough.collections.Pair;
 import io.github.thebusybiscuit.slimefun4.libraries.dough.items.CustomItemStack;
 import io.github.thebusybiscuit.slimefun4.libraries.dough.items.ItemUtils;
 import io.github.thebusybiscuit.slimefun4.utils.ChestMenuUtils;
-import me.mrCookieSlime.CSCoreLibPlugin.general.Inventory.ChestMenu;
 import me.mrCookieSlime.Slimefun.api.inventory.BlockMenu;
 
 /**
@@ -47,6 +46,7 @@ import me.mrCookieSlime.Slimefun.api.inventory.BlockMenu;
  *
  * @author Mooy1
  */
+@ParametersAreNonnullByDefault
 public final class InfinityGroup extends FlexItemGroup {
 
     private static final int[] INFINITY_RECIPE_SLOTS = {
@@ -117,6 +117,7 @@ public final class InfinityGroup extends FlexItemGroup {
         PlayerProfile.get(player, profile -> Scheduler.run(() -> open(player, new BackEntry(menu, profile, null), true)));
     }
 
+    @SuppressWarnings("deprecation")
     private static void open(@Nonnull Player player, @Nonnull BackEntry entry, boolean useHistory) {
 
         if (useHistory) {
@@ -128,7 +129,8 @@ public final class InfinityGroup extends FlexItemGroup {
             }
         }
 
-        ChestMenu menu = new ChestMenu("&bInfinity Recipes");
+        me.mrCookieSlime.CSCoreLibPlugin.general.Inventory.ChestMenu menu =
+                new me.mrCookieSlime.CSCoreLibPlugin.general.Inventory.ChestMenu("&bInfinity Recipes");
 
         if (entry.bench != null) {
             menu.addMenuClickHandler(1, (player1, i, itemStack, clickAction) -> {
@@ -203,6 +205,7 @@ public final class InfinityGroup extends FlexItemGroup {
         menu.open(player);
     }
 
+    @SuppressWarnings("deprecation")
     @ParametersAreNonnullByDefault
     private static void openInfinityRecipe(Player player, String id, BackEntry entry) {
         Pair<SlimefunItemStack, ItemStack[]> pair = ITEMS.get(id);
@@ -211,7 +214,8 @@ public final class InfinityGroup extends FlexItemGroup {
             return;
         }
 
-        ChestMenu menu = new ChestMenu(Objects.requireNonNull(pair.getFirstValue().getDisplayName()));
+        me.mrCookieSlime.CSCoreLibPlugin.general.Inventory.ChestMenu menu =
+                new me.mrCookieSlime.CSCoreLibPlugin.general.Inventory.ChestMenu(Objects.requireNonNull(pair.getFirstValue().getDisplayName()));
         menu.setEmptySlotsClickable(false);
 
         menu.addItem(BACK, ChestMenuUtils.getBackButton(player, ""), (player12, i, itemStack, clickAction) -> {
@@ -328,6 +332,7 @@ public final class InfinityGroup extends FlexItemGroup {
 
     }
 
+    @SuppressWarnings("deprecation")
     @ParametersAreNonnullByDefault
     private static void openSlimefunRecipe(Player player, BackEntry entry, String backID, LinkedList<SlimefunItem> slimefunHistory) {
         SlimefunItem slimefunItem = slimefunHistory.peekLast();
@@ -338,7 +343,8 @@ public final class InfinityGroup extends FlexItemGroup {
 
         ItemStack output = slimefunItem.getRecipeOutput().clone();
 
-        ChestMenu menu = new ChestMenu(ItemUtils.getItemName(output));
+        me.mrCookieSlime.CSCoreLibPlugin.general.Inventory.ChestMenu menu =
+                new me.mrCookieSlime.CSCoreLibPlugin.general.Inventory.ChestMenu(ItemUtils.getItemName(output));
         menu.setEmptySlotsClickable(false);
 
         int length = slimefunHistory.size();

@@ -4,8 +4,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Pattern;
 
-import lombok.Setter;
-
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Material;
@@ -25,7 +23,7 @@ import io.github.thebusybiscuit.slimefun4.libraries.dough.common.ChatColors;
 import io.github.thebusybiscuit.slimefun4.libraries.dough.items.CustomItemStack;
 import io.github.thebusybiscuit.slimefun4.libraries.dough.items.ItemUtils;
 import io.github.thebusybiscuit.slimefun4.utils.tags.SlimefunTag;
-import me.mrCookieSlime.CSCoreLibPlugin.Configuration.Config;
+// import me.mrCookieSlime.CSCoreLibPlugin.Configuration.Config;
 import me.mrCookieSlime.Slimefun.api.BlockStorage;
 import me.mrCookieSlime.Slimefun.api.inventory.BlockMenu;
 
@@ -72,7 +70,6 @@ public final class StorageCache {
     private Material material;
     private ItemMeta meta;
     private boolean voidExcess;
-    @Setter
     private int amount;
 
     StorageCache(StorageUnit storageUnit, BlockMenu menu) {
@@ -245,14 +242,22 @@ public final class StorageCache {
             }
         }
 
+        // get storage id for this location (may be null)
+        String storageId = io.github.mooy1.infinityexpansion.items.storage.StorageUnit.getStorageId(this.menu.getLocation());
+
         ItemStack drop = this.storageUnit.getItem().clone();
-        drop.setItemMeta(StorageUnit.saveToStack(drop.getItemMeta(), this.menu.getItemInSlot(DISPLAY_SLOT), this.displayName, this.amount));
+        // Use the helper that writes id into the dropped item's meta
+        drop.setItemMeta(io.github.mooy1.infinityexpansion.items.storage.StorageUnit
+                .saveToStackWithId(drop.getItemMeta(), this.menu.getItemInSlot(DISPLAY_SLOT), this.displayName, this.amount, storageId));
+
         e.getPlayer().sendMessage(ChatColor.GREEN + "Stored items transferred to dropped item");
         drops.add(drop);
     }
 
+
+    @SuppressWarnings("deprecation")
     void reloadData() {
-        Config config = BlockStorage.getLocationInfo(this.menu.getLocation());
+        me.mrCookieSlime.CSCoreLibPlugin.Configuration.Config config = BlockStorage.getLocationInfo(this.menu.getLocation());
         String amt = config.getString(STORED_AMOUNT);
         this.amount = amt == null ? 0 : Integer.parseInt(amt);
         this.voidExcess = "true".equals(config.getString(VOID_EXCESS));
@@ -275,11 +280,21 @@ public final class StorageCache {
         this.material = stored.getType();
     }
 
+    /**
+     * Modifikasi utama: tambahkan pengecekan isBlocked di awal sehingga hopper/otomasi tidak bisa memasukkan storage items.
+     */
     void input() {
         ItemStack input = this.menu.getItemInSlot(INPUT_SLOT);
         if (input == null) {
             return;
         }
+
+        // CEK: tolak item blocked (storage items dll)
+        if (io.github.mooy1.infinityexpansion.items.storage.StorageUnit.isBlocked(input)) {
+            // ignore blocked items (do not consume)
+            return;
+        }
+
         if (isEmpty()) {
             // set the stored item to input
             this.amount = input.getAmount();
@@ -412,11 +427,24 @@ public final class StorageCache {
         this.amount = 0;
     }
 
+    /**
+     * matches: cek apakah item cocok dengan stored item.
+     * Perubahan: segera tolak jika item termasuk blocked (lebih aman daripada cek nama kelas).
+     */
     boolean matches(ItemStack item) {
+        // Prevent storing other StorageUnit items inside this storage
+        // Use StorageUnit.isBlocked to determine blocked Slimefun IDs or embedded items
+        if (io.github.mooy1.infinityexpansion.items.storage.StorageUnit.isBlocked(item)) {
+            return false;
+        }
+
+        // fallback to normal matching (type + meta)
         return item.getType() == this.material
                 && item.hasItemMeta() == (this.meta != null)
                 && (this.meta == null || this.meta.equals(item.getItemMeta()));
     }
+
+
 
     private ItemStack createItem(int amount) {
         ItemStack item = new ItemStack(this.material, amount);
@@ -500,6 +528,23 @@ public final class StorageCache {
                 }
             }
         }
+    }
+
+    // ===========================
+    // Explicit setters to avoid Lombok/annotation-processing issues during build
+    // ===========================
+    /**
+     * Set stored amount (primitive).
+     */
+    public void setAmount(int amount) {
+        this.amount = amount;
+    }
+
+    /**
+     * Set stored amount (Integer overload) — accepts null (treated as 0).
+     */
+    public void setAmount(Integer amount) {
+        this.amount = amount == null ? 0 : amount.intValue();
     }
 
 }

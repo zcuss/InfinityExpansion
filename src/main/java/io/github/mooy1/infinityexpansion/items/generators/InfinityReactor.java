@@ -21,7 +21,6 @@ import io.github.thebusybiscuit.slimefun4.api.recipes.RecipeType;
 import io.github.thebusybiscuit.slimefun4.core.attributes.EnergyNetProvider;
 import io.github.thebusybiscuit.slimefun4.core.attributes.RecipeDisplayItem;
 import io.github.thebusybiscuit.slimefun4.libraries.dough.items.CustomItemStack;
-import me.mrCookieSlime.CSCoreLibPlugin.Configuration.Config;
 import me.mrCookieSlime.Slimefun.api.BlockStorage;
 import me.mrCookieSlime.Slimefun.api.inventory.BlockMenu;
 import me.mrCookieSlime.Slimefun.api.inventory.BlockMenuPreset;
@@ -100,8 +99,9 @@ public final class InfinityReactor extends MenuBlock implements EnergyNetProvide
         return new int[0];
     }
 
+    @SuppressWarnings("deprecation")
     @Override
-    public int getGeneratedOutput(@Nonnull Location l, @Nonnull Config config) {
+    public int getGeneratedOutput(@Nonnull Location l, @Nonnull me.mrCookieSlime.CSCoreLibPlugin.Configuration.Config config) {
         BlockMenu inv = BlockStorage.getInventory(l);
 
         int progress = Integer.parseInt(BlockStorage.getLocationInfo(l, "progress"));

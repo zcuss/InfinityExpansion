@@ -15,7 +15,6 @@ import io.github.thebusybiscuit.slimefun4.api.recipes.RecipeType;
 import io.github.thebusybiscuit.slimefun4.core.attributes.EnergyNetProvider;
 import io.github.thebusybiscuit.slimefun4.core.networks.energy.EnergyNetComponentType;
 import io.github.thebusybiscuit.slimefun4.libraries.dough.items.CustomItemStack;
-import me.mrCookieSlime.CSCoreLibPlugin.Configuration.Config;
 import me.mrCookieSlime.Slimefun.api.BlockStorage;
 import me.mrCookieSlime.Slimefun.api.inventory.BlockMenu;
 import me.mrCookieSlime.Slimefun.api.inventory.BlockMenuPreset;
@@ -64,8 +63,9 @@ public final class EnergyGenerator extends MenuBlock implements EnergyNetProvide
         return new int[0];
     }
 
+    @SuppressWarnings("deprecation")
     @Override
-    public int getGeneratedOutput(Location l, Config data) {
+    public int getGeneratedOutput(Location l, me.mrCookieSlime.CSCoreLibPlugin.Configuration.Config data) {
         int gen = this.type.generate(l.getWorld(), l.getBlock(), this.generation);
 
         BlockMenu inv = BlockStorage.getInventory(l);
