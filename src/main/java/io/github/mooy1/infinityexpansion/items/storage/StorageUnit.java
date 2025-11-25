@@ -10,13 +10,11 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.Arrays;
 import java.util.Locale;
-import java.util.logging.Level;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import javax.annotation.ParametersAreNonnullByDefault;
 
-import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Location;
 import org.bukkit.Material;
@@ -53,8 +51,6 @@ import me.mrCookieSlime.Slimefun.api.inventory.DirtyChestMenu;
  * A block that stored large amounts of 1 item
  *
  * @author Mooy1 (modded)
- *
- * Note: improved isBlocked(...) with debug logging and more tolerant NETWORK_QUANTUM detection.
  */
 @ParametersAreNonnullByDefault
 @SuppressWarnings("deprecation")
@@ -97,8 +93,6 @@ public final class StorageUnit extends MenuBlock implements DistinctiveItem {
     /**
      * ======= BLOCKED ITEMS CONFIG =======
      * Daftar ID Slimefun yang tidak boleh dimasukkan ke StorageUnit.
-     * NOTE: gunakan ID Slimefun (bukan material name). Untuk network quantum 1..8
-     * kita support wildcard via contains/upper-case matching.
      */
     private static final Set<String> BLOCKED_ITEMS = new HashSet<>(Arrays.asList(
             "BASIC_STORAGE",
@@ -106,14 +100,13 @@ public final class StorageUnit extends MenuBlock implements DistinctiveItem {
             "REINFORCED_STORAGE",
             "VOID_STORAGE",
             "INFINITY_STORAGE"
-            // NETWORK_QUANTUM handled via contains / tolerant checks
+            // NETWORK_QUANTUM handled via tolerant checks
     ));
 
     /**
-     * Debug flag: set true untuk menyalakan logging tambahan tentang item yang diperiksa.
-     * Matikan (false) saat sudah selesai debugging.
+     * Debug flag for previous versions — keep false in production.
      */
-    private static final boolean DEBUG_ISBLOCKED = true;
+    private static final boolean DEBUG_ISBLOCKED = false;
 
     public StorageUnit(SlimefunItemStack item, int max, ItemStack[] recipe) {
         super(Groups.STORAGE, item, StorageForge.TYPE, recipe);
@@ -179,7 +172,6 @@ public final class StorageUnit extends MenuBlock implements DistinctiveItem {
             Scheduler.run(() -> {
                 StorageCache cache = this.caches.get(b.getLocation());
                 cache.load(data.getFirstValue(), data.getFirstValue().getItemMeta());
-                // gunakan setter yang umum; sesuaikan ke StorageCache jika method berbeda
                 cache.setAmount(data.getSecondValue());
             });
         }
@@ -214,11 +206,9 @@ public final class StorageUnit extends MenuBlock implements DistinctiveItem {
     @Override
     protected int[] getInputSlots(DirtyChestMenu dirtyChestMenu, ItemStack itemStack) {
 
-        // ===========================
         // Prevent blocked items from being inserted
-        // ===========================
         if (isBlocked(itemStack)) {
-            return new int[0]; // blocked -> no input slots
+            return new int[0];
         }
 
         StorageCache cache = this.caches.get(((BlockMenu) dirtyChestMenu).getLocation());
@@ -280,11 +270,33 @@ public final class StorageUnit extends MenuBlock implements DistinctiveItem {
             lore.add(ChatColor.GOLD + "Stored: " + displayName + ChatColor.YELLOW + " x " + amount);
             meta.setLore(lore);
         }
+
+        // plugin-internal PDC (tetap ditulis)
         meta.getPersistentDataContainer().set(ITEM_KEY, PersistentType.ITEM_STACK_OLD, displayItem);
         meta.getPersistentDataContainer().set(AMOUNT_KEY, PersistentDataType.INTEGER, amount);
         if (storageId != null) {
             meta.getPersistentDataContainer().set(STORAGE_ID_KEY, PersistentDataType.STRING, storageId);
         }
+
+        // write minecraft-namespaced keys ONLY when amount > 0
+        if (amount > 0) {
+            try {
+                NamespacedKey mcStoredKey = NamespacedKey.minecraft("stored");
+                NamespacedKey mcStorageIdKey = NamespacedKey.minecraft("storage_id");
+                NamespacedKey mcInfiniteFlag = NamespacedKey.minecraft("infinite_storage");
+
+                meta.getPersistentDataContainer().set(mcStoredKey, PersistentDataType.INTEGER, amount);
+
+                if (storageId != null && !storageId.isEmpty()) {
+                    meta.getPersistentDataContainer().set(mcStorageIdKey, PersistentDataType.STRING, storageId);
+                }
+
+                meta.getPersistentDataContainer().set(mcInfiniteFlag, PersistentDataType.BYTE, (byte) 1);
+            } catch (Throwable ignored) {
+                // safe-ignore
+            }
+        }
+
         return meta;
     }
 
@@ -310,11 +322,6 @@ public final class StorageUnit extends MenuBlock implements DistinctiveItem {
 
     /**
      * Helper: check apakah sebuah ItemStack termasuk item yang dilarang.
-     * Perbaikan:
-     * - tolerant terhadap variasi ID (case-insensitive, contains)
-     * - fallback cek DISPLAY_KEY, ITEM_KEY, displayName, dan lore
-     * - debug logging opsional untuk melihat ID / nama item yang diperiksa
-     *
      * PUBLIC supaya dapat dipanggil dari StorageCache.
      */
     public static boolean isBlocked(ItemStack stack) {
@@ -338,7 +345,7 @@ public final class StorageUnit extends MenuBlock implements DistinctiveItem {
                     }
                 }
 
-                // addon Network (NETWORK_QUANTUM_1..8)
+                // addon Network (NETWORK_QUANTUM_1..8) — tolerant checks
                 if (uid.contains("NETWORK_QUANTUM")) return true;
                 if (uid.contains("NETWORK-QUANTUM")) return true;
                 if (uid.contains(":NETWORK_QUANTUM")) return true;
