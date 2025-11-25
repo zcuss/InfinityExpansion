@@ -23,7 +23,7 @@ jobs:
       - name: Build with Maven
         run: mvn -U -DskipTests=true clean package
 
-      - name: Rename JAR with build number
+      - name: Rename JAR
         run: |
           JAR_FILE=$(ls target/*.jar | head -n 1)
           NEW_NAME="InfinityExpansion-${{ github.run_number }}.jar"
@@ -33,20 +33,14 @@ jobs:
       - name: Generate changelog
         run: |
           CHANGELOG="## Changelog\n- $(git log -1 --pretty=format:%s)"
-          printf "%s\n" "CHANGELOG=$CHANGELOG" >> $GITHUB_ENV
+          echo "CHANGELOG=$CHANGELOG" >> $GITHUB_ENV
 
-      - name: Create Release
+      - name: Create Release & Upload
         uses: softprops/action-gh-release@v2
         with:
           tag_name: release-${{ github.run_number }}
           name: "Auto Release #${{ github.run_number }}"
           body: ${{ env.CHANGELOG }}
-        env:
-          GITHUB_TOKEN: ${{ secrets.RELEASE_TOKEN }}
-
-      - name: Upload JAR to Release
-        uses: softprops/action-gh-release@v2
-        with:
           files: ${{ env.RENAMED_JAR }}
         env:
           GITHUB_TOKEN: ${{ secrets.RELEASE_TOKEN }}
