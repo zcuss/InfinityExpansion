@@ -320,119 +320,95 @@ public final class StorageUnit extends MenuBlock implements DistinctiveItem {
     public static boolean isBlocked(ItemStack stack) {
         if (stack == null) return false;
 
-        // helper untuk log debug
-        final java.util.function.Consumer<String> dbg = msg -> {
-            if (DEBUG_ISBLOCKED) {
-                Bukkit.getLogger().log(Level.INFO, "[StorageUnit:isBlocked] " + msg);
-            }
-        };
-
         // 1) Cek SlimefunItem langsung
-        io.github.thebusybiscuit.slimefun4.api.items.SlimefunItem sf = io.github.thebusybiscuit.slimefun4.api.items.SlimefunItem.getByItem(stack);
+        SlimefunItem sf = SlimefunItem.getByItem(stack);
         if (sf != null) {
             String id = null;
             try {
                 id = sf.getId();
             } catch (Throwable ignored) {}
-            dbg.accept("SlimefunItem detected; raw id = " + id + " ; item = " + stack);
+
             if (id != null) {
                 String uid = id.toUpperCase(Locale.ROOT);
 
-                // cek exact match pada BLOCKED_ITEMS (case-insensitive)
+                // exact match dari addon Infinite
                 for (String blocked : BLOCKED_ITEMS) {
                     if (blocked.equalsIgnoreCase(uid) || blocked.equalsIgnoreCase(id)) {
-                        dbg.accept("Blocked by exact BLOCKED_ITEMS match: " + id);
                         return true;
                     }
                 }
 
-                // tolerant checks: contains NETWORK_QUANTUM / NETWORK-QUANTUM / :NETWORK_QUANTUM
-                if (uid.contains("NETWORK_QUANTUM") || uid.contains("NETWORK-QUANTUM") || uid.contains(":NETWORK_QUANTUM") || uid.contains(":NETWORK-QUANTUM")) {
-                    dbg.accept("Blocked by NETWORK_QUANTUM pattern: " + id);
-                    return true;
-                }
+                // addon Network (NETWORK_QUANTUM_1..8)
+                if (uid.contains("NETWORK_QUANTUM")) return true;
+                if (uid.contains("NETWORK-QUANTUM")) return true;
+                if (uid.contains(":NETWORK_QUANTUM")) return true;
+                if (uid.contains(":NETWORK-QUANTUM")) return true;
 
-                // also check if id contains simple 'QUANTUM' and 'NETWORK' words (very tolerant)
-                if (uid.contains("QUANTUM") && uid.contains("NETWORK")) {
-                    dbg.accept("Blocked by combined keywords in id: " + id);
-                    return true;
-                }
+                // fallback sangat toleran
+                if (uid.contains("NETWORK") && uid.contains("QUANTUM")) return true;
             }
-        } else {
-            dbg.accept("Not a SlimefunItem (getByItem returned null) for item = " + stack);
         }
 
-        // 2) Fallback: cek PersistentDataContainer
+        // 2) Fallback: cek PDC (persistent data)
         if (stack.hasItemMeta()) {
             ItemMeta meta = stack.getItemMeta();
             PersistentDataContainer pdc = meta.getPersistentDataContainer();
 
-            // jika item punya label display (ini item yang kita pakai untuk tampilan)
+            // display key -> sudah pasti storage
             if (pdc.has(DISPLAY_KEY, PersistentDataType.BYTE)) {
-                dbg.accept("Blocked: has DISPLAY_KEY (treat as storage display)");
                 return true;
             }
 
-            // jika item punya ITEM_KEY (embedded item), ambil dan cek
+            // embedded inner item
             if (pdc.has(ITEM_KEY, PersistentType.ITEM_STACK_OLD)) {
                 ItemStack inner = pdc.get(ITEM_KEY, PersistentType.ITEM_STACK_OLD);
                 if (inner != null) {
-                    io.github.thebusybiscuit.slimefun4.api.items.SlimefunItem sfInner = io.github.thebusybiscuit.slimefun4.api.items.SlimefunItem.getByItem(inner);
-                    String innerId = null;
+                    SlimefunItem sfInner = SlimefunItem.getByItem(inner);
                     if (sfInner != null) {
+                        String innerId = null;
                         try {
                             innerId = sfInner.getId();
                         } catch (Throwable ignored) {}
-                        dbg.accept("Embedded inner item detected; inner id = " + innerId + " ; inner = " + inner);
+
                         if (innerId != null) {
                             String uid = innerId.toUpperCase(Locale.ROOT);
+
                             for (String blocked : BLOCKED_ITEMS) {
                                 if (blocked.equalsIgnoreCase(uid) || blocked.equalsIgnoreCase(innerId)) {
-                                    dbg.accept("Blocked by embedded exact BLOCKED_ITEMS match: " + innerId);
                                     return true;
                                 }
                             }
-                            if (uid.contains("NETWORK_QUANTUM") || uid.contains("NETWORK-QUANTUM") || uid.contains(":NETWORK_QUANTUM") || uid.contains(":NETWORK-QUANTUM")) {
-                                dbg.accept("Blocked by embedded NETWORK_QUANTUM pattern: " + innerId);
-                                return true;
-                            }
-                            if (uid.contains("QUANTUM") && uid.contains("NETWORK")) {
-                                dbg.accept("Blocked by embedded combined keywords in innerId: " + innerId);
-                                return true;
-                            }
+
+                            if (uid.contains("NETWORK_QUANTUM")) return true;
+                            if (uid.contains("NETWORK-QUANTUM")) return true;
+                            if (uid.contains(":NETWORK_QUANTUM")) return true;
+                            if (uid.contains(":NETWORK-QUANTUM")) return true;
+
+                            if (uid.contains("NETWORK") && uid.contains("QUANTUM")) return true;
                         }
-                    } else {
-                        dbg.accept("Embedded inner item is not a SlimefunItem (getByItem returned null) for inner = " + inner);
                     }
                 }
             }
 
-            // 3) Fallback ekstra: cek display name / lore untuk kata kunci
+            // display name fallback
             if (meta.hasDisplayName()) {
                 String dn = meta.getDisplayName().toUpperCase(Locale.ROOT);
-                dbg.accept("DisplayName check: " + meta.getDisplayName());
-                if (dn.contains("NETWORK") && dn.contains("QUANTUM")) {
-                    dbg.accept("Blocked by displayName containing NETWORK + QUANTUM: " + meta.getDisplayName());
-                    return true;
-                }
-                if (dn.contains("QUANTUM") && dn.contains("STORAGE")) {
-                    dbg.accept("Blocked by displayName containing QUANTUM + STORAGE: " + meta.getDisplayName());
-                    return true;
-                }
+                if (dn.contains("NETWORK") && dn.contains("QUANTUM")) return true;
+                if (dn.contains("QUANTUM") && dn.contains("STORAGE")) return true;
             }
+
+            // lore fallback
             if (meta.hasLore()) {
                 for (String line : meta.getLore()) {
-                    String up = line == null ? "" : line.toUpperCase(Locale.ROOT);
-                    if ((up.contains("NETWORK") && up.contains("QUANTUM")) || (up.contains("QUANTUM") && up.contains("STORAGE"))) {
-                        dbg.accept("Blocked by lore line: " + line);
-                        return true;
-                    }
+                    if (line == null) continue;
+                    String up = line.toUpperCase(Locale.ROOT);
+                    if (up.contains("NETWORK") && up.contains("QUANTUM")) return true;
+                    if (up.contains("QUANTUM") && up.contains("STORAGE")) return true;
                 }
             }
         }
 
-        // Tidak terdeteksi sebagai blocked
-        dbg.accept("Not blocked: item allowed = " + stack);
         return false;
     }
+
 }
