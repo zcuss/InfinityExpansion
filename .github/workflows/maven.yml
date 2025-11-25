@@ -1,37 +1,52 @@
-name: Java CI
+name: Java CI + Release
 
 on:
   push:
     branches:
-    - master
+      - main
   pull_request:
     branches:
-    - master
+      - main
 
 jobs:
   build:
-
-    name: Maven build
+    name: Maven Build & Release
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Set up JDK 17
-        uses: actions/setup-java@v3.4.0
+        uses: actions/setup-java@v4
         with:
-          distribution: 'adopt'
-          java-version: '17'
-          java-package: jdk
-          architecture: x64
+          distribution: "adopt"
+          java-version: "17"
 
       - name: Cache Maven packages
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: ~/.m2
           key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
           restore-keys: ${{ runner.os }}-m2
 
       - name: Build with Maven
-        run: mvn package --file pom.xml
+        run: mvn -U -DskipTests=true clean package
+
+      - name: Upload CI Artifact (JAR)
+        uses: actions/upload-artifact@v4
+        with:
+          name: InfinityExpansion-Build
+          path: target/*.jar
+          compression-level: 0 # <- GitHub tetap ZIP, tapi tanpa kompresi
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v1
+        if: github.ref == 'refs/heads/main'
+        with:
+          tag_name: build-${{ github.run_number }}
+          name: "Build ${{ github.run_number }}"
+          prerelease: true
+          files: target/*.jar
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
