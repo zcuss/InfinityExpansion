@@ -42,11 +42,11 @@ jobs:
           name: "Auto Release #${{ github.run_number }}"
           body: ${{ env.CHANGELOG }}
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.RELEASE_TOKEN }}
 
       - name: Upload JAR to Release
         uses: softprops/action-gh-release@v2
         with:
           files: ${{ env.RENAMED_JAR }}
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.RELEASE_TOKEN }}
