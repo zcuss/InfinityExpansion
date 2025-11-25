@@ -3,10 +3,10 @@ name: Java CI + Release
 on:
   push:
     branches:
-      - main
+      - master
   pull_request:
     branches:
-      - main
+      - master
 
 jobs:
   build:
@@ -42,7 +42,7 @@ jobs:
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v1
-        if: github.ref == 'refs/heads/main'
+        if: github.ref == 'refs/heads/master'
         with:
           tag_name: build-${{ github.run_number }}
           name: "Build ${{ github.run_number }}"
