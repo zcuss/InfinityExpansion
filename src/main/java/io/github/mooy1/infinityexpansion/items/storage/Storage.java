@@ -76,7 +76,7 @@ public final class Storage {
                 Materials.MAGSTEEL, BASIC_STORAGE, Materials.MAGSTEEL,
                 Materials.MAGSTEEL, Materials.MACHINE_CIRCUIT, Materials.MAGSTEEL
         }).register(plugin);
-        new StorageUnit(ADVANCED_STORAGE, REINFORCED_AMOUNT, new ItemStack[] {
+        new StorageUnit(REINFORCED_STORAGE, REINFORCED_AMOUNT, new ItemStack[] {
                 Materials.MAGSTEEL_PLATE, Materials.MACHINE_CIRCUIT, Materials.MAGSTEEL_PLATE,
                 Materials.MAGSTEEL_PLATE, ADVANCED_STORAGE, Materials.MAGSTEEL_PLATE,
                 Materials.MAGSTEEL_PLATE, Materials.MACHINE_PLATE, Materials.MAGSTEEL_PLATE
