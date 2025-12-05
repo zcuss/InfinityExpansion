@@ -23,6 +23,7 @@ import org.bukkit.block.Block;
 import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.event.block.BlockPlaceEvent;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.meta.BlockStateMeta;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.persistence.PersistentDataContainer;
 import org.bukkit.persistence.PersistentDataType;
@@ -106,6 +107,7 @@ public final class StorageUnit extends MenuBlock implements DistinctiveItem {
     /**
      * Debug flag for previous versions — keep false in production.
      */
+    @SuppressWarnings("unused")
     private static final boolean DEBUG_ISBLOCKED = false;
 
     public StorageUnit(SlimefunItemStack item, int max, ItemStack[] recipe) {
@@ -327,6 +329,13 @@ public final class StorageUnit extends MenuBlock implements DistinctiveItem {
     public static boolean isBlocked(ItemStack stack) {
         if (stack == null) return false;
 
+        // QUICK: jika item adalah varian shulker box (WHITE_SHULKER_BOX, SHULKER_BOX, dll.)
+        try {
+            if (stack.getType() != null && stack.getType().name().contains("SHULKER_BOX")) {
+                return true;
+            }
+        } catch (Throwable ignored) {}
+
         // 1) Cek SlimefunItem langsung
         SlimefunItem sf = SlimefunItem.getByItem(stack);
         if (sf != null) {
@@ -361,6 +370,16 @@ public final class StorageUnit extends MenuBlock implements DistinctiveItem {
             ItemMeta meta = stack.getItemMeta();
             PersistentDataContainer pdc = meta.getPersistentDataContainer();
 
+            // Jika meta adalah BlockStateMeta dan berisi Shulker box, block juga
+            if (meta instanceof BlockStateMeta) {
+                try {
+                    BlockStateMeta bsm = (BlockStateMeta) meta;
+                    if (bsm.getBlockState() != null && bsm.getBlockState().getType().name().contains("SHULKER_BOX")) {
+                        return true;
+                    }
+                } catch (Throwable ignored) {}
+            }
+
             // display key -> sudah pasti storage
             if (pdc.has(DISPLAY_KEY, PersistentDataType.BYTE)) {
                 return true;
@@ -370,6 +389,14 @@ public final class StorageUnit extends MenuBlock implements DistinctiveItem {
             if (pdc.has(ITEM_KEY, PersistentType.ITEM_STACK_OLD)) {
                 ItemStack inner = pdc.get(ITEM_KEY, PersistentType.ITEM_STACK_OLD);
                 if (inner != null) {
+
+                    // cek cepat pada inner item apakah shulker box
+                    try {
+                        if (inner.getType() != null && inner.getType().name().contains("SHULKER_BOX")) {
+                            return true;
+                        }
+                    } catch (Throwable ignored) {}
+
                     SlimefunItem sfInner = SlimefunItem.getByItem(inner);
                     if (sfInner != null) {
                         String innerId = null;
@@ -417,5 +444,4 @@ public final class StorageUnit extends MenuBlock implements DistinctiveItem {
 
         return false;
     }
-
 }
